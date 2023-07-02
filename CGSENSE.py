@@ -104,7 +104,7 @@ if __name__ == '__main__':
     # change all the data to torch tensor
     #org = torch.tensor(org[0], dtype=torch.float32)
     atb = torch.tensor(atb[1], dtype=torch.float32)
-
+    atb = c2r(atb)
     csm = torch.tensor(csm[1], dtype=torch.complex64)
     mask = torch.tensor(mask[1], dtype=torch.complex64)
     out = makeModel(atb, csm, mask, True)
