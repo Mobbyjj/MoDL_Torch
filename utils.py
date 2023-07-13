@@ -5,6 +5,7 @@ import time
 import numpy as np
 import h5py as h5
 import torch
+import wandb
 
 class MyDataset(torch.utils.data.Dataset):
     def __init__(self, filename, training, testslice = 100, sigma=.01):
@@ -15,9 +16,9 @@ class MyDataset(torch.utils.data.Dataset):
         self.sigma = sigma
         with h5.File(filename) as f:
             if self.training =='training':
-                self.org,self.csm,self.mask=f['trnOrg'][:],f['trnCsm'][:],f['trnMask'][:]
+                self.org,self.csm,self.mask=f['trnOrg'][10:15],f['trnCsm'][10:15],f['trnMask'][10:15]
             elif self.training =='validation':
-                self.org,self.csm,self.mask=f['tstOrg'][:50],f['tstCsm'][:50],f['tstMask'][:50]
+                self.org,self.csm,self.mask=f['tstOrg'][10:15],f['tstCsm'][10:15],f['tstMask'][10:15]
             else:
                 org,csm,mask=f['tstOrg'][self.testslice],f['tstCsm'][self.testslice],f['tstMask'][self.testslice]
                 na=np.newaxis
@@ -202,3 +203,21 @@ def getData(trnTst='testing',num=100,sigma=.01):
     if trnTst=='testing':
         atb=c2r(atb)
     return org,atb,csm,mask
+
+def log_image_wandb(
+    images: list[torch.Tensor],
+    name: str,
+    abs: bool,
+):
+    '''
+    compat the 2D tensor image to a list and create a compacted image with the list.
+    '''
+    height, width = images[0].shape
+    new_image = torch.zeros((height, width * len(images)))
+    for i, image in enumerate(images):
+        if abs:
+            new_image[: , i * width : (i + 1) * width] = torch.abs(image)
+        else:
+            new_image[: , i * width : (i + 1) * width] = image
+
+    wandb.log({name: [wandb.Image(new_image, caption=name)]}, commit=True)
