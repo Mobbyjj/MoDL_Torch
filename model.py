@@ -4,6 +4,7 @@ from os.path import expanduser
 import matplotlib.pyplot as plt
 import torch.nn as nn
 import utils
+import wandb
 
 home = expanduser("~")
 epsilon = 1e-5
@@ -24,13 +25,13 @@ class CNNLayer(nn.Module):
         super(CNNLayer, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding)
         nn.init.xavier_uniform_(self.conv.weight)  # Xavier initialization
-        self.bn = nn.BatchNorm2d(out_channels) # inplace=True to save memory
+        #self.bn = nn.BatchNorm2d(out_channels) # inplace=True to save memory
         self.relu = nn.ReLU(inplace=True)
         self.last_layer = last_layer
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.bn(x)
+        #x = self.bn(x)
         if not self.last_layer:  # apply ReLU activation, except for the last layer
             x = self.relu(x)
         return x
@@ -50,14 +51,18 @@ class dw(nn.Module):
         self.layer3 = CNNLayer(64, 64, kernel_size=3, stride=1, padding=1)
         self.layer4 = CNNLayer(64, 64, kernel_size=3, stride=1, padding=1)
         self.layer5 = CNNLayer(64, 2, kernel_size=3, stride=1, padding=1, last_layer=True)
+        self.shortcut = nn.Identity()
+        
 
     def forward(self, x):
+        shortcut = self.shortcut(x)
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
         x = self.layer5(x)
-        return x
+        # ensure the network learns the residual
+        return shortcut + x
     
     
 class Aclass:
@@ -133,12 +138,17 @@ class MoDL(nn.Module):
         self.lam = nn.Parameter(torch.tensor(0.05), requires_grad=True)
         self.dc = dc()
         
-    def forward(self, atb, csm, mask):
+    def forward(self, atb, csm, mask, logger):
+        # plot the atb
         out = self.dw(atb)
         rhs = atb + self.lam*out
+        # plot the rhs
+        logger.log({'lam': self.lam.item()})
         # rhs: nbatch x 2 x nrow x ncol, csm: nbatch*ncoil x nrow x ncol, mask: nbatch x nrow x ncol
         out = self.dc(rhs, csm, mask, self.lam)
         #print('lam1 = ', self.lam)
         # for calculating the loss, we need to return to the 2 channel real image
+        # plot the final out
+        utils.log_image_wandb(images = [r2c(atb)[0],r2c(rhs)[0],out[0]], name = 'atb rhs out', abs = True)
         out = c2r(out)
         return out
