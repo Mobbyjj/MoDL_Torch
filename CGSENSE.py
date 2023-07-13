@@ -48,7 +48,7 @@ def myCG(A, rhs):
         alpha = torch.complex(alpha, torch.tensor(0.))
         x = x + alpha *p 
         r = r - alpha * Ap
-        rTrNew = (torch.sum(r.conj()*r)).to(torch.float32)
+        rTrNew = (torch.sum(r.conj()*r)).real.to(torch.float32)
         beta = rTrNew / rTr
         beta = torch.complex(beta, torch.tensor(0.))
         p = r + beta * p
@@ -58,7 +58,7 @@ def myCG(A, rhs):
     x = torch.zeros_like(rhs)
     i,r,p = 0, rhs, rhs
     # This should yield cast the complex to real, but no worries, 
-    rTr = torch.sum(r.conj()*r).to(torch.float32)
+    rTr = torch.sum(r.conj()*r).real.to(torch.float32)
     loopVar = i, rTr, x, r, p
     
     #def cond(loopVar):
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     # if you get the training data, you should convert the real to complex first
     # change all the data to torch tensor
     #org = torch.tensor(org[0], dtype=torch.float32)
-    atb = torch.tensor(atb[1], dtype=torch.float32)
+    atb = torch.tensor(atb[1], dtype=torch.complex64)
     atb = c2r(atb)
     csm = torch.tensor(csm[1], dtype=torch.complex64)
     mask = torch.tensor(mask[1], dtype=torch.complex64)
