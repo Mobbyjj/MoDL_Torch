@@ -7,7 +7,7 @@ I also separate the CGSENSE procedure in the CGSENSE.py
 
 Different from the original code, I utilize first 50 slices in the test dataset for validation. Hope it doesn't bother. -- please check util.py
 
-I tried to mimic the tensorflow version using the torch for brain dataset, **but batch normalization does not work, it will change the scale of the data and deterioate**. If you figure out, please feel free to contact me. 
+I tried to mimic the tensorflow version using the torch for brain dataset, **but batch normalization did not work, it changed the scale of the data and deterioated**. If you figure out, please feel free to contact me. 
 
 
 ### Reference paper: 
